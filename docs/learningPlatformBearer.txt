@@ -1,0 +1,386 @@
+Tanulási platform REST API megvalósítása Laravel környezetben
+
+base_url: http://127.0.0.1/learningPlatformBearer/public/api vagy http://127.0.0.1:8000/api
+
+Az API-t olyan funkciókkal kell ellátni, amelyek lehetővé teszik annak nyilvános elérhetőségét. Ennek a backendnek a fő célja, hogy kiszolgálja a frontendet, amelyet a tanulók a kurzusokra való feliratkozásra és a tanulásra használnak.
+
+Funkciók:
+Authentikáció (login, token kezelés).
+Felhasználó beiratkozhat egy kurzusra.
+Kurzuson belül a kurzus teljesítését jelöljük.
+A teszteléshez készíts
+-1 admin (admin / admin)
+-9 student user (jelszó: Jelszo_2025)
+-3 releváns kurzus
+-két véletlen student beiratkozásai (köztük 1-1 befejezett)
+
+Az adatbázis neve: learning_platform.
+
+
+Adatbázis terv:
++---------------------+     +---------------------+       +-----------------+        +------------+
+|personal_access_tokens|    |        users        |       |   enrollments   |        |  courses   |
++---------------------+     +---------------------+       +-----------------+        +------------+
+| id (PK)             |   _1| id (PK)             |1__    | id (PK)         |     __1| id (PK)    |
+| tokenable_id (FK)   |K_/  | name                |   \__N| user_id (FK)    |    /   | title      |
+| tokenable_type      |     | email (unique)      |       | course_id (FK)  |M__/    | description|
+| name                |     | password            |       | enrolled_at     |        | created_at |
+| token (unique)      |     | role (student/admin)|       | completed_at    |        | updated_at |
+| abilities           |     +---------------------+       +-----------------+        +------------+
+| last_used_at        |
++---------------------+
+
+
+***************
+* I. Felvonás *
+***************
+
+
+
+1. Telepítés (projekt létrehozása, .env konfiguráció, sanctum telepítése, tesztútvonal)
+---------------------------------------------------------------------------------------
+
+célhely>composer create-project laravel/laravel --prefer-dist learningPlatformBearer
+célhely>cd learningPlatformBearer
+  .env fájl módosítása
+    DB_CONNECTION=mysql
+    DB_HOST=127.0.0.1
+    DB_PORT=3306
+    DB_DATABASE=learning_platform
+    DB_USERNAME=root
+    DB_PASSWORD=
+learningPlatformBearer>composer require laravel/sanctum
+learningPlatformBearer>php artisan vendor:publish --provider="Laravel\Sanctum\SanctumServiceProvider"
+learningPlatformBearer>php artisan install:api
+
+api.php:
+use Illuminate\Support\Facades\Route;
+
+Route::get('/ping', function () {
+    return response()->json([
+        'message' => 'API works!'
+    ], 200);
+});
+
+learningPlatformBearer>php artisan serve
+POSTMAN teszt: GET http://127.0.0.1/learningPlatform/public/api/ping
+
+2. Modellek és migráció (sémák)
+--------------------------------
+
+Ami már megvan (database/migrations) Ehhez nem is kell nyúlni
+Schema::create('personal_access_tokens', function (Blueprint $table) {
+    $table->id();
+    $table->morphs('tokenable'); // user kapcsolat
+    $table->string('name');
+    $table->string('token', 64)->unique();
+    $table->text('abilities')->nullable();
+    $table->timestamp('last_used_at')->nullable();
+    $table->timestamps();
+});
+
+Ezt módosítani kell:
+
+Schema::create('users', function (Blueprint $table) {
+    $table->id();
+    $table->string('name');
+    $table->string('email')->unique();
+    $table->string('password');
+    //ezt bele kell írni
+    $table->enum('role', ['student', 'admin']);
+    $table->timestamps();
+});
+
+
+app/Models/User.php (módosítani kell)
+namespace App\Models;
+
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+
+class User extends Authenticatable
+{
+    use HasApiTokens, HasFactory, Notifiable;
+
+    protected $fillable = [
+        'name',
+        'email',
+        'password',
+        'role',
+    ];
+
+    //amikor a modellt JSON formátumban adod vissza ne jelenjenek meg a következő mezők:
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    public function enrollments()
+    {
+        return $this->hasMany(Enrollment::class);
+    }
+
+    public function courses()
+    {
+        return $this->belongsToMany(Course::class, 'enrollments');
+    }
+
+    public function isAdmin()
+    {
+        return $this->role === 'admin';
+    }
+}
+
+
+
+learningPlatformBearer>php artisan make:model Course -m
+
+database/migrations/*_create_courses_table.php (módosítani kell) 
+
+Schema::create('courses', function (Blueprint $table) {
+    $table->id();
+    $table->string('title');
+    $table->text('description')->nullable();
+    $table->timestamps();
+});
+
+app/Models/Course.php (módosítani kell)
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+
+class Course extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'title',
+        'description',
+    ];
+
+    public function enrollments()
+    {
+        return $this->hasMany(Enrollment::class);
+    }
+
+    public function users()
+    {
+        return $this->belongsToMany(User::class, 'enrollments');
+    }
+}
+
+
+learningPlatformBearer>php artisan make:model Enrollment -m
+database/migrations/*_create_enrollments_table.php (módosítani kell) 
+
+Schema::create('enrollments', function (Blueprint $table) {
+    $table->id();
+    $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+    //a user_id mező a users tábla id oszlopára fog hivatkozni
+    $table->foreignId('course_id')->constrained()->cascadeOnDelete();
+    $table->timestamp('enrolled_at')->useCurrent();
+    $table->timestamp('completed_at')->nullable(); // jelzi, hogy a kurzus befejeződött
+});
+
+
+app/Models/Enrollment.php (módosítani kell)
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+
+class Enrollment extends Model
+{
+    use HasFactory;
+
+    public $timestamps = false;
+
+    protected $fillable = [
+        'user_id',
+        'course_id',
+        'enrolled_at',
+        'completed_at',
+    ];
+
+    protected $dates = [
+        'enrolled_at',
+        'completed_at',
+    ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function course()
+    {
+        return $this->belongsTo(Course::class);
+    }
+}
+
+learningPlatformBearer>php artisan migrate
+
+3. Seeding (Factory és seederek)
+--------------------------------
+
+database/factories/UserFactory.php (módosítása)
+
+namespace Database\Factories;
+
+use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Facades\Hash;
+use App\Models\User;
+
+class UserFactory extends Factory
+{
+    protected $model = User::class;
+
+    public function definition()
+    {
+        $this->faker = \Faker\Factory::create('hu_HU'); // magyar nevekhez
+
+        return [
+            'name' => $this->faker->firstName . ' ' . $this->faker->lastName, // magyaros teljes név
+            'email' => $this->faker->unique()->safeEmail(),
+            'password' => Hash::make('Jelszo123'), // minden user jelszava: Jelszo123
+            'role' => 'student',
+        ];
+    }
+}
+
+
+learningPlatformBearer>php artisan make:seeder UserSeeder
+
+database/seeders/UserSeeder.php (módosítása)
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Seeder;
+use App\Models\User;
+use Illuminate\Support\Facades\Hash;
+
+class UserSeeder extends Seeder
+{
+    public function run(): void
+    {
+        // 1 admin
+        User::create([
+            'name' => 'admin',
+            'email' => 'admin@example.com',
+            'password' => Hash::make('admin'),
+            'role' => 'admin',
+        ]);
+
+        // 9 student user
+        User::factory(9)->create();
+    }
+}
+
+learningPlatformBearer>php artisan make:seeder CourseSeeder
+
+database/seeders/CourseSeeder.php (módosítása)
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Seeder;
+use App\Models\Course;
+
+class CourseSeeder extends Seeder
+{
+    public function run(): void
+    {
+        Course::create([
+            'title' => 'Szoftverfejlesztési alapok',
+            'description' => 'Alapvető programozási fogalmak és minták.',
+        ]);
+
+        Course::create([
+            'title' => 'REST API fejlesztés',
+            'description' => 'API-k tervezése és készítése Laravelben.',
+        ]);
+
+        Course::create([
+            'title' => 'Fullstack webfejlesztés',
+            'description' => 'Backend és frontend alapok.',
+        ]);
+    }
+}
+
+learningPlatformBearer>php artisan make:seeder EnrollmentSeeder
+
+database/seeders/EnrollmentSeeder.php (módosítása)
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Seeder;
+use App\Models\User;
+use App\Models\Course;
+use App\Models\Enrollment;
+use Carbon\Carbon;
+
+class EnrollmentSeeder extends Seeder
+{
+    public function run(): void
+    {
+        $students = User::where('role', 'student')->take(2)->get();
+        $courses = Course::all();
+
+        // User 1: első két kurzus
+        Enrollment::create([
+            'user_id' => $students[0]->id,
+            'course_id' => $courses[0]->id,
+            'enrolled_at' => now(),
+            'completed_at' => now(),  // completed
+        ]);
+
+        Enrollment::create([
+            'user_id' => $students[0]->id,
+            'course_id' => $courses[1]->id,
+            'enrolled_at' => now(),
+            'completed_at' => null,
+        ]);
+
+        // User 2: első két kurzus
+        Enrollment::create([
+            'user_id' => $students[1]->id,
+            'course_id' => $courses[0]->id,
+            'enrolled_at' => now(),
+            'completed_at' => now(), // completed
+        ]);
+
+        Enrollment::create([
+            'user_id' => $students[1]->id,
+            'course_id' => $courses[2]->id,
+            'enrolled_at' => now(),
+            'completed_at' => null,
+        ]);
+    }
+}
+
+
+DatabaseSeeder.php (módosítása)
+namespace Database\Seeders;
+
+use Illuminate\Database\Seeder;
+
+class DatabaseSeeder extends Seeder
+{
+    public function run(): void
+    {
+        $this->call([
+            UserSeeder::class,
+            CourseSeeder::class,
+            EnrollmentSeeder::class,
+        ]);
+    }
+}
+
+
+learningPlatformBearer>php artisan db:seed
+
+
+
