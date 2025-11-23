@@ -20,6 +20,7 @@ return new class extends Migration
             $table->enum('role', ['student', 'admin']);
             $table->rememberToken();
             $table->timestamps();
+            $table->softDeletes(); // ez adja hozzá a deleted_at mezőt
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

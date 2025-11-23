@@ -16,6 +16,352 @@ A teszteléshez készíts
 
 Az adatbázis neve: learning_platform.
 
+Végpontok:
+A Content-Type és az Accept headerkulcsok mindig application/json formátumúak legyenek.
+Érvénytelen vagy hiányzó token esetén a backendnek 401 Unauthorized választ kell visszaadnia:
+JSON
+Response: 401 Unauthorized
+{
+  "message": "Invalid token"
+}
+
+Nem védett végpontok:
+GET /ping - teszteléshez
+POST /users/register - regisztrációhoz
+POST /users/login - belépéshez
+
+Hibák:
+-400 Bad Request: A kérés hibás formátumú. Ezt a hibát akkor kell visszaadni, ha a kérés hibásan van formázva, vagy ha hiányoznak a szükséges mezők.
+-401 Unauthorized: A felhasználó nem jogosult a kérés végrehajtására. Ezt a hibát akkor kell visszaadni, ha az érvénytelen a token.
+-403 Forbidden: A felhasználó nem jogosult a kérés végrehajtására. Ezt a hibát akkor kell visszaadni, ha a kreditkeret túllépésre kerül.
+-404 Not Found: A kért erőforrás nem található. Ezt a hibát akkor kell visszaadni, ha a kért kurzus, alkalom vagy foglalás nem található.
+-503 Service Unavailable: A szolgáltatás nem elérhető. Ezt a hibát akkor kell visszaadni, ha a tanulási szolgáltatás nem elérhető, vagy ha váratlan hibát ad vissza.
+
+Felhasználókezelés:
+-------------------
+
+POST /register
+Új felhasználó regisztrálása. Az új felhasználók alapértelmezetten 0 kredittel rendelkeznek. Az e-mail címnek egyedinek kell lennie.
+Kérés Törzse:
+JSON
+{
+    "name": "mozso",
+    "email": "mozso@moriczref.hu",
+    "password" : "Jelszo_2025",
+    "password_confirmation" : "Jelszo_2025"
+}
+Válasz (sikeres regisztráció esetén): 201 Created
+JSON
+{
+    "message": "User created successfully",
+    "user": {
+        "id": 13,
+        "name": "mozso",
+        "email": "mozso@moriczref.hu",
+        "role": "student"
+    }
+}
+
+Automatikus válasz felüldefiniálása (ha az e-mail cím már foglalt): 422 Unprocessable Entity
+JSON
+{
+  "message": "Failed to register user",
+  "errors": {
+    "email": [
+      "The email has already been taken."
+    ]
+  }
+}
+
+
+POST /login
+Bejelentkezés e-mail címmel és jelszóval.
+Kérés Törzse:
+JSON
+{
+  "email": "mozso@moriczref.hu",
+  "password": "Jelszo_2025"
+}
+Válasz (sikeres bejelentkezés esetén): 200 OK
+JSON
+{
+    "message": "Login successful",
+    "user": {
+        "id": 13,
+        "name": "mozso",
+        "email": "mozso@moriczref.hu",
+        "role": "student"
+    },
+    "access": {
+        "token": "2|7Fbr79b5zn8RxMfOqfdzZ31SnGWvgDidjahbdRfL2a98cfd8",
+        "token_type": "Bearer"
+    }
+}
+
+Válasz (sikertelen bejelentkezés esetén): 401 Unauthorized
+JSON
+{
+  "message": "Invalid email or password"
+}
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Az innen következő végpontok autentikáltak, tehát a kérés headerjében meg kell adni a tokent is !
+! Authorization: "Bearer 2|7Fbr79b5zn8RxMfOqfdzZ31SnGWvgDidjahbdRfL2a98cfd8"                      !
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
+
+POST /logout
+A jelenlegi autentikált felhasználó kijelentkeztetése, a felhasználó tokenjének törlése. Ha a token érvénytelen, a fent meghatározott általános 401 Unauthorized hibát kell visszaadnia.
+
+Válasz (sikeres kijelentkezés esetén): 200 OK
+JSON
+{
+  "message": "Logout successful"
+}
+
+GET /users/me
+Saját felhasználói profil, statisztikák lekérése.
+Válasz: 200 OK
+JSON
+{
+    "user": {
+        "id": 1,
+        "name": "admin",
+        "email": "admin@example.com",
+        "role": "admin"
+    },
+    "stats": {
+        "enrolledCourses": 10,
+        "completedCourses": 11
+    }
+}
+
+PUT /users/me
+Saját felhasználói adatok frissítése. Az aktuális felhasználó módosíthatja a nevét, e-mail címét és/vagy jelszavát.
+Kérés törzse:
+{
+  "name": "Új Név",
+  "email": "ujemail@example.com",
+  "password": "ÚjJelszo_2025",
+  "password_confirmation": "ÚjJelszo_2025"
+}
+
+Válasz (sikeres frissítés, 200 OK):
+JSON{
+  "message": "Profile updated successfully",
+  "user": {
+    "id": 5,
+    "name": "Új Név",
+    "email": "ujemail@example.com",
+    "role": "admin"
+  }
+}
+
+Hibák:
+422 Unprocessable Entity – érvénytelen vagy hiányzó mezők, pl. nem egyezik a password_confirmation, vagy az e-mail már foglalt
+401 Unauthorized – ha a token érvénytelen vagy hiányzik
+
+
+GET /users
+A felhasználói profilok, statisztikák lekérése az admin számára.
+Válasz: 200 OK
+JSON
+{
+    "data": [
+        {
+            "user": {
+                "id": 1,
+                "name": "admin",
+                "email": "admin@example.com",
+                "role": "admin"
+            },
+            "stats": {
+                "enrolledCourses": 10,
+                "completedCourses": 6
+            }
+        },
+        {
+            "user": {
+                "id": 2,
+                "name": "Aranka Török",
+                "email": "atorok@example.com",
+                "role": "student"
+            },
+            "stats": {
+                "enrolledCourses": 2,
+                "completedCourses": 1
+            }
+        },
+        {
+            "user": {
+                "id": 3,
+                "name": "Barnabás Török",
+                "email": "btorok@example.net",
+                "role": "student"
+            },
+            "stats": {
+                "enrolledCourses": 2,
+                "completedCourses": 1
+            }
+        },
+
+Ha nem admin próbálja elérni a végpontot:
+Válasz: 403 Forbidden
+JSON
+{
+  "message": "Admin access required"
+}
+
+
+GET /users/:id
+A felhasználói profil, statisztikák lekérése az admin számára.
+Válasz: 200 OK
+JSON
+{
+  "user": {
+    "id": 5,
+    "name": "Eva Rodriguez",
+    "email": "eva@example.com",
+    "role": "student",
+  },
+  "stats": {
+    "enrolledCourses": 3,
+    "completedCourses": 13
+  }
+}
+
+Ha nem admin próbálja elérni a végpontot:
+Válasz: 403 Forbidden
+JSON
+{
+  "message": "Admin access required"
+}
+
+Ha törölt (softdeleted) felhasználót próbáltunk megnézni:
+Válasz: 404 Not Found
+JSON
+{
+  "message": "User not found"
+}
+
+
+DELETE /users/:id
+Egy felhasználó törlése (Soft Delete) az admin számára.
+Ha a felhasználó már törlésre került, vagy nem létezik, a megfelelő hibaüzenetet adja vissza.
+
+Válasz (sikeres törlés esetén): 200 OK
+JSON
+{
+  "message": "User deleted successfully"
+}
+
+Válasz (ha a felhasználó nem található): 404 Not Found
+JSON
+{
+  "message": "User not found"
+}
+
+Válasz (ha a token érvénytelen vagy hiányzik): 401 Unauthorized
+JSON
+{
+  "message": "Invalid token"
+}
+
+Kurzuskezelés:
+--------------
+
+GET /courses
+Az összes elérhető kurzus listájának lekérése.
+Válasz: 200 OK
+JSON
+{
+  "courses": [
+    {
+      "title": "Szoftverfejlesztési alapok",
+      "description": "Alapvető programozási fogalmak és minták."
+    },
+    {
+      "title": "REST API fejlesztés",
+      "description": "API-k tervezése és készítése Laravelben."
+    }
+  ]
+}
+
+GET /courses/:id
+Információk lekérése egy adott kurzusról.
+Válasz: 200 OK
+JSON
+{
+    "course": {
+        "title": "Szoftverfejlesztési alapok",
+        "description": "Alapvető programozási fogalmak és minták."
+    },
+    "students": [
+        {
+            "name": "Barnabás Török",
+            "email": "btorok@example.net",
+            "completed": false,
+        },
+        {
+            "name": "Andrea Török",
+            "email": "atorok@example.net",
+            "completed": true,
+        }
+    ]
+}
+Automatikus válasz (ha a kurzus nem található): 404 Not Found
+
+POST /courses/:id/enroll
+A jelenlegi felhasználó beiratkozása egy kurzusra.
+Válasz (sikeres beiratkozás esetén): 200 OK
+JSON
+{
+  "message": "Successfully enrolled in course"
+}
+Válasz (ha már beiratkozott): 409 Conflict
+JSON
+{
+  "message": "Already enrolled in this course"
+}
+Automatikus válasz (ha a kurzus nem található): 404 Not Found
+
+
+
+PATCH /courses/:id/completed
+Jelenlegi felhasználó egy kurzusának befejezettként való megjelölése.
+Válasz (sikeres befejezés esetén): 200 OK
+JSON
+{
+  "message": "Course completed",
+}
+Válasz (ha nincs beiratkozva): 403 Forbidden
+JSON
+{
+  "message": "Not enrolled in this course"
+}
+Válasz (ha már befejezett): 409 Conflict
+JSON
+{
+  "message": "Course already completed"
+}
+
+
+Összefoglalva:
+
+HTTP metódus	Útvonal	            Jogosultság	 Státuszkódok	                                        Rövid leírás
+GET	        /ping	                Nyilvános	 200 OK	                                                API teszteléshez
+POST	    /register	            Nyilvános	 201 Created, 400 Bad Request	                        Új felhasználó regisztrációja
+POST	    /login	                Nyilvános	 200 OK, 401 Unauthorized	                            Bejelentkezés e-maillel és jelszóval
+POST	    /logout	                Hitelesített 200 OK, 401 Unauthorized	                            Kijelentkezés
+GET	        /users/me	            Hitelesített 200 OK, 401 Unauthorized	                            Saját profil és statisztikák lekérése
+PUT         /users/me	            Hitelesített 200 OK, 422 Unprocessable Entity, 401 Unauthorized     Saját profil adatainak módosítása
+GET	        /users  	            Admin	     200 OK, 403 Forbidden                               	Összes felhasználó profiljának lekérése
+GET	        /users/:id	            Admin	     200 OK, 403 Forbidden, 404 Not Found, 401 Unauthorized	Bármely felhasználó profiljának lekérése
+DELETE	    /users/:id	            Admin	     200 OK, 404 Not Found, 401 Unauthorized	            Felhasználó törlése (Soft Delete)
+GET	        /courses	            Hitelesített 200 OK, 401 Unauthorized	                            Kurzusok listázása a beiratkozási státusszal
+GET	        /courses/:id	        Hitelesített 200 OK, 404 Not Found, 401 Unauthorized	            Egy kurzus részletei
+POST	    /courses/:id/enroll	    Hitelesített 200 OK, 409 Conflict, 404 Not Found, 401 Unauthorized	Beiratkozás kurzusra
+PATCH	    /courses/:id/completed	Hitelesített 200 OK, 403 Forbidden, 409 Conflict, 401 Unauthorized	Kurzus befejezettként jelölése
+
 
 Adatbázis terv:
 +---------------------+     +---------------------+       +-----------------+        +------------+
@@ -26,14 +372,14 @@ Adatbázis terv:
 | tokenable_type      |     | email (unique)      |       | course_id (FK)  |M__/    | description|
 | name                |     | password            |       | enrolled_at     |        | created_at |
 | token (unique)      |     | role (student/admin)|       | completed_at    |        | updated_at |
-| abilities           |     +---------------------+       +-----------------+        +------------+
-| last_used_at        |
+| abilities           |     | deleted_at          |       +-----------------+        +------------+
+| last_used_at        |     +---------------------+
 +---------------------+
 
 
-***************
-* I. Felvonás *
-***************
+*************************************
+* I. Felvonás struktúra kialakítása *
+*************************************
 
 
 
@@ -49,6 +395,10 @@ célhely>cd learningPlatformBearer
     DB_DATABASE=learning_platform
     DB_USERNAME=root
     DB_PASSWORD=
+
+  config/app.php módosítása
+    'timezone' => 'Europe/Budapest',  
+
 learningPlatformBearer>composer require laravel/sanctum
 learningPlatformBearer>php artisan vendor:publish --provider="Laravel\Sanctum\SanctumServiceProvider"
 learningPlatformBearer>php artisan install:api
@@ -88,6 +438,8 @@ Schema::create('users', function (Blueprint $table) {
     $table->string('password');
     //ezt bele kell írni
     $table->enum('role', ['student', 'admin']);
+    //ezt bele kell írni
+    $table->softDeletes(); // ez adja hozzá a deleted_at mezőt
     $table->timestamps();
 });
 
@@ -382,5 +734,356 @@ class DatabaseSeeder extends Seeder
 
 learningPlatformBearer>php artisan db:seed
 
+******************************************
+* II. Felvonás Controller és endpoint-ok *
+******************************************
 
 
+learningPlatformBearer>php artisan make:controller AuthController
+app\Http\Controllers\AuthController.php szerkesztése
+
+namespace App\Http\Controllers;
+
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
+
+class AuthController extends Controller
+{
+    public function register(Request $request)
+    {
+        try {
+            $request->validate([
+                'name' => 'required|string|max:255',
+                'email' => 'required|email|unique:users,email',
+                'password' => 'required|string|confirmed|min:8',
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'message' => 'Failed to register user',
+                'errors' => $e->errors() // visszaadja, mely mezők hibásak
+            ], 422);
+        }
+
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'role' => 'student',
+        ]);
+
+        return response()->json([
+            'message' => 'User created successfully',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+            ],
+        ], 201);
+    }
+
+    public function login(Request $request)
+    {
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            return response()->json(['message' => 'Invalid email or password'], 401);
+        }
+
+        $token = $user->createToken('api-token')->plainTextToken;
+
+        return response()->json([
+            'message' => 'Login successful',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+            ],
+            'access' => [
+                'token' => $token,
+                'token_type' => 'Bearer'
+            ]
+        ]);
+    }
+
+    public function logout(Request $request)
+    {
+        $request->user()->tokens()->delete(); //minden token törlése
+        //$request->user()->currentAccessToken()->delete(); //aktuális token törlése, más eszközökön marad a bejelentkezés 
+        return response()->json(['message' => 'Logout successful']);
+    }
+}
+
+learningPlatformBearer>php artisan make:controller UserController
+app\Http\Controllers\UserController.php szerkesztése
+
+namespace App\Http\Controllers;
+
+use App\Models\User;
+use Illuminate\Http\Request;
+
+class UserController extends Controller
+{
+    /**
+     * GET /users/me
+     * A bejelentkezett felhasználó adatainak lekérése.
+     */
+    public function me(Request $request)
+    {
+        $user = $request->user();
+
+        return response()->json([
+            'user' => [
+                'id'    => $user->id,
+                'name'  => $user->name,
+                'email' => $user->email,
+                'role'  => $user->role,
+            ],
+            'stats' => [
+                'enrolledCourses'  => $user->enrollments()->count(),
+                'completedCourses' => $user->enrollments()->where('completed_at', true)->count(),
+            ]
+        ], 200);
+    }
+
+    /**
+     * PUT /users/me
+     * A bejelentkezett felhasználó adatainak frissítése.
+     */
+    public function updateMe(Request $request)
+    {
+        $user = $request->user();
+
+        $request->validate([
+            'name'   => 'sometimes|string|max:255',
+            'email'  => 'sometimes|email|unique:users,email,' . $user->id,
+            'password' => 'sometimes|string|confirmed|min:8',
+        ]);
+
+        if ($request->name) {
+            $user->name = $request->name;
+        }
+        if ($request->email) {
+            $user->email = $request->email;
+        }
+        if ($request->password) {
+            $user->password = bcrypt($request->password);
+        }
+
+        $user->save();
+
+        return response()->json([
+            'message' => 'Profile updated successfully',
+            'user' => [
+                'id'    => $user->id,
+                'name'  => $user->name,
+                'email' => $user->email,
+                'role'  => $user->role,
+            ],
+        ]);
+    }
+
+    /**
+     * ADMIN ONLY
+     * GET /users
+     * Összes felhasználó listázása.
+     */
+    public function index(Request $request)
+    {
+        if ($request->user()->role !== 'admin') {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        
+        $users = User::all()->map(function ($user) {
+        return [
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+            ],
+            'stats' => [
+                'enrolledCourses'  => $user->enrollments()->count(),
+                'completedCourses' => $user->enrollments()->whereNotNull('completed_at')->count(),
+            ]
+        ];
+    });
+
+    return response()->json([
+        'data' => $users
+    ]);
+
+    }
+
+    /**
+     * ADMIN ONLY
+     * GET /users/{id}
+     * Felhasználó lekérése ID alapján.
+     */
+    public function show(Request $request, $id)
+    {
+        if ($request->user()->role !== 'admin') {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        $user = User::withTrashed()->find($id);
+
+        if (!$user) {
+            return response()->json(['message' => 'User not found'], 404);
+        }
+
+        if ($user->trashed()) {
+            return response()->json(['message' => 'User is deleted'], 404);
+        }
+
+        return response()->json([
+            'user' => [
+                'id'    => $user->id,
+                'name'  => $user->name,
+                'email' => $user->email,
+                'role'  => $user->role,
+            ],
+            'stats' => [
+                'enrolledCourses'  => $user->enrollments()->count(),
+                'completedCourses' => $user->enrollments()->whereNotNull('completed_at')->count(),
+            ]
+        ]);
+    }
+
+    /**
+     * ADMIN ONLY
+     * DELETE /users/{id}
+     * Soft delete felhasználó.
+     */
+    public function destroy(Request $request, $id)
+    {
+        if ($request->user()->role !== 'admin') {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        $user = User::find($id);
+
+        if (!$user) {
+            return response()->json(['message' => 'User not found'], 404);
+        }
+
+        $user->delete();
+
+        return response()->json(['message' => 'User deleted successfully']);
+    }
+}
+
+learningPlatformBearer>php artisan make:controller CourseController
+app\Http\Controllers\CourseController.php szerkesztése
+
+namespace App\Http\Controllers;
+
+use App\Models\Course;
+use App\Models\Enrollment;
+use Illuminate\Http\Request;
+
+class CourseController extends Controller
+{
+    public function index(Request $request)
+    {
+        
+        $courses = Course::select('title', 'description')->get();
+
+        return response()->json([
+            'courses' => $courses
+        ]);
+
+    }
+
+    public function show(Course $course)
+    {
+        // Csak a szükséges mezők a kapcsolt usereknél, valamint a teljesítési státusz
+        $students = $course->users()->select('name', 'email')->withPivot('completed_at')->get()->map(function ($user) {
+            return [
+                'name' => $user->name,
+                'email' => $user->email,
+                'completed' => !is_null($user->pivot->completed_at)
+            ];
+        });
+
+        return response()->json([
+            'course' => [
+                'title' => $course->title,
+                'description' => $course->description
+            ],
+            'students' => $students
+        ]);
+    }
+
+    public function enroll(Course $course, Request $request)
+    {
+        $user = $request->user();
+
+        if ($user->courses()->where('course_id', $course->id)->exists()) {
+            return response()->json(['message' => 'Already enrolled in this course'], 409);
+        }
+
+        $user->courses()->attach($course->id, ['enrolled_at' => now()]);
+
+        return response()->json(['message' => 'Successfully enrolled in course']);
+    }
+
+    public function complete(Course $course, Request $request)
+    {
+        $user = $request->user();
+        $enrollment = Enrollment::where('user_id', $user->id)
+            ->where('course_id', $course->id)
+            ->first();
+
+        if (! $enrollment) {
+            return response()->json(['message' => 'Not enrolled in this course'], 403);
+        }
+
+        if ($enrollment->completed_at) {
+            return response()->json(['message' => 'Course already completed'], 409);
+        }
+
+        $enrollment->update(['completed_at' => now()]);
+
+        return response()->json(['message' => 'Course completed']);
+    }
+}
+
+
+routes\api.php frissítése:
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\CourseController;
+
+// Public
+Route::get('/ping', function () { return response()->json(['message'=>'API works!']); });
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login']);
+
+// Authenticated
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/users/me', [UserController::class, 'me']);
+    Route::put('/users/me', [UserController::class, 'updateMe']);
+
+    // Admin
+    Route::get('/users', [UserController::class, 'index']);
+    Route::get('/users/{id}', [UserController::class, 'show']);
+    Route::delete('/users/{id}', [UserController::class, 'destroy']);
+
+    Route::get('/courses', [CourseController::class, 'index']);
+    Route::get('/courses/{course}', [CourseController::class, 'show']);
+    Route::post('/courses/{course}/enroll', [CourseController::class, 'enroll']);
+    Route::patch('/courses/{course}/completed', [CourseController::class, 'complete']);
+});
+
+
+***************************
+* III. felvonás Tesztelés *
+***************************
