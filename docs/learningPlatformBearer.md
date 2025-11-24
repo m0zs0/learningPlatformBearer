@@ -77,16 +77,18 @@ Automatikus válasz felüldefiniálása (ha az e-mail cím már foglalt): `422 U
 }
 ```
 
-POST /login
+**POST** `/login`
 Bejelentkezés e-mail címmel és jelszóval.
+
 Kérés Törzse:
-JSON
+```JSON
 {
   "email": "mozso@moriczref.hu",
   "password": "Jelszo_2025"
 }
-Válasz (sikeres bejelentkezés esetén): 200 OK
-JSON
+```
+Válasz (sikeres bejelentkezés esetén): `200 OK`
+```JSON
 {
     "message": "Login successful",
     "user": {
@@ -100,17 +102,18 @@ JSON
         "token_type": "Bearer"
     }
 }
-
+```
 Válasz (sikertelen bejelentkezés esetén): 401 Unauthorized
-JSON
+```JSON
 {
   "message": "Invalid email or password"
 }
+```
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Az innen következő végpontok autentikáltak, tehát a kérés headerjében meg kell adni a tokent is !
-! Authorization: "Bearer 2|7Fbr79b5zn8RxMfOqfdzZ31SnGWvgDidjahbdRfL2a98cfd8"                      !
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
++-------------------------------------------------------------------------------------------------+
+| Az innen következő végpontok autentikáltak, tehát a kérés headerjében meg kell adni a tokent is |
+| Authorization: "Bearer 2|7Fbr79b5zn8RxMfOqfdzZ31SnGWvgDidjahbdRfL2a98cfd8"                      |
++-------------------------------------------------------------------------------------------------+ 
 
 POST /logout
 A jelenlegi autentikált felhasználó kijelentkeztetése, a felhasználó tokenjének törlése. Ha a token érvénytelen, a fent meghatározott általános 401 Unauthorized hibát kell visszaadnia.
