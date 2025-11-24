@@ -439,7 +439,9 @@ Válasz (ha már befejezett): `409 Conflict`
 
 
 `célhely>composer create-project laravel/laravel --prefer-dist learningPlatformBearer`
+
 `célhely>cd learningPlatformBearer`
+
 *.env fájl módosítása*
 ```sql
     DB_CONNECTION=mysql
@@ -454,7 +456,9 @@ Válasz (ha már befejezett): `409 Conflict`
     'timezone' => 'Europe/Budapest',`
 ```
 `learningPlatformBearer>composer require laravel/sanctum`
+
 `learningPlatformBearer>php artisan vendor:publish --provider="Laravel\Sanctum\SanctumServiceProvider"`
+
 `learningPlatformBearer>php artisan install:api`
 
 *api.php:*
@@ -805,7 +809,7 @@ class DatabaseSeeder extends Seeder
 
 `learningPlatformBearer>php artisan db:seed`
 
-
+---
 
 # II. Modul Controller és endpoint-ok
 
