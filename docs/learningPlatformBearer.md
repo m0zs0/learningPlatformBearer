@@ -43,6 +43,7 @@ Response: 401 Unauthorized
 
 **POST** `/register`
 Új felhasználó regisztrálása. Az új felhasználók alapértelmezetten 0 kredittel rendelkeznek. Az e-mail címnek egyedinek kell lennie.
+
 Kérés Törzse:
 ```JSON
 {
@@ -112,22 +113,25 @@ Válasz (sikertelen bejelentkezés esetén): 401 Unauthorized
 
 
 > Az innen következő végpontok autentikáltak, tehát a kérés headerjében meg kell adni a tokent is
+
 > Authorization: "Bearer 2|7Fbr79b5zn8RxMfOqfdzZ31SnGWvgDidjahbdRfL2a98cfd8"                     
 
 
-POST /logout
-A jelenlegi autentikált felhasználó kijelentkeztetése, a felhasználó tokenjének törlése. Ha a token érvénytelen, a fent meghatározott általános 401 Unauthorized hibát kell visszaadnia.
+**POST** `/logout`
+A jelenlegi autentikált felhasználó kijelentkeztetése, a felhasználó tokenjének törlése. Ha a token érvénytelen, a fent meghatározott általános `401 Unauthorized` hibát kell visszaadnia.
 
-Válasz (sikeres kijelentkezés esetén): 200 OK
-JSON
+Válasz (sikeres kijelentkezés esetén): `200 OK`
+```JSON
 {
   "message": "Logout successful"
 }
+```
 
-GET /users/me
+**GET** `/users/me`
 Saját felhasználói profil, statisztikák lekérése.
-Válasz: 200 OK
-JSON
+
+Válasz: `200 OK`
+```JSON
 {
     "user": {
         "id": 1,
@@ -140,19 +144,23 @@ JSON
         "completedCourses": 11
     }
 }
+```
 
-PUT /users/me
+**PUT** `/users/me`
 Saját felhasználói adatok frissítése. Az aktuális felhasználó módosíthatja a nevét, e-mail címét és/vagy jelszavát.
+
 Kérés törzse:
+```JSON
 {
   "name": "Új Név",
   "email": "ujemail@example.com",
   "password": "ÚjJelszo_2025",
   "password_confirmation": "ÚjJelszo_2025"
 }
-
-Válasz (sikeres frissítés, 200 OK):
-JSON{
+```
+Válasz (sikeres frissítés, `200 OK`):
+```JSON
+{
   "message": "Profile updated successfully",
   "user": {
     "id": 5,
@@ -161,16 +169,18 @@ JSON{
     "role": "admin"
   }
 }
+```
+*Hibák:*
+`422 Unprocessable Entity` – érvénytelen vagy hiányzó mezők, pl. nem egyezik a password_confirmation, vagy az e-mail már foglalt
 
-Hibák:
-422 Unprocessable Entity – érvénytelen vagy hiányzó mezők, pl. nem egyezik a password_confirmation, vagy az e-mail már foglalt
-401 Unauthorized – ha a token érvénytelen vagy hiányzik
+`401 Unauthorized` – ha a token érvénytelen vagy hiányzik
 
 
-GET /users
+**GET** `/users`
 A felhasználói profilok, statisztikák lekérése az admin számára.
-Válasz: 200 OK
-JSON
+
+Válasz: `200 OK`
+```JSON
 {
     "data": [
         {
@@ -211,19 +221,21 @@ JSON
         }
     ]
 }
-
+```
 Ha nem admin próbálja elérni a végpontot:
-Válasz: 403 Forbidden
-JSON
+
+Válasz: `403 Forbidden`
+```JSON
 {
   "message": "Admin access required"
 }
+```
 
-
-GET /users/:id
+**GET** `/users/:id`
 A felhasználói profil, statisztikák lekérése az admin számára.
-Válasz: 200 OK
-JSON
+
+Válasz: `200 OK`
+```JSON
 {
   "user": {
     "id": 5,
@@ -236,51 +248,56 @@ JSON
     "completedCourses": 13
   }
 }
-
+```
 Ha nem admin próbálja elérni a végpontot:
-Válasz: 403 Forbidden
-JSON
+
+Válasz: `403 Forbidden`
+```JSON
 {
   "message": "Admin access required"
 }
-
+```
 Ha törölt (softdeleted) felhasználót próbáltunk megnézni:
-Válasz: 404 Not Found
-JSON
+
+Válasz: `404 Not Found`
+```JSON
 {
   "message": "User not found"
 }
+```
 
-
-DELETE /users/:id
+**DELETE** `/users/:id`
 Egy felhasználó törlése (Soft Delete) az admin számára.
+
 Ha a felhasználó már törlésre került, vagy nem létezik, a megfelelő hibaüzenetet adja vissza.
 
-Válasz (sikeres törlés esetén): 200 OK
-JSON
+Válasz (sikeres törlés esetén): `200 OK`
+```JSON
 {
   "message": "User deleted successfully"
 }
-
-Válasz (ha a felhasználó nem található): 404 Not Found
-JSON
+```
+Válasz (ha a felhasználó nem található): `404 Not Found`
+```JSON
 {
   "message": "User not found"
 }
-
-Válasz (ha a token érvénytelen vagy hiányzik): 401 Unauthorized
-JSON
+```
+Válasz (ha a token érvénytelen vagy hiányzik): `401 Unauthorized`
+```JSON
 {
   "message": "Invalid token"
 }
+```
 
-Kurzuskezelés:
+## Kurzuskezelés:
 --------------
 
-GET /courses
+**GET** `/courses`
 Az összes elérhető kurzus listájának lekérése.
-Válasz: 200 OK
-JSON
+
+Válasz: `200 OK`
+```JSON
 {
   "courses": [
     {
@@ -293,11 +310,13 @@ JSON
     }
   ]
 }
+```
 
-GET /courses/:id
+**GET** `/courses/:id`
 Információk lekérése egy adott kurzusról.
-Válasz: 200 OK
-JSON
+
+Válasz: `200 OK`
+```JSON
 {
     "course": {
         "title": "Szoftverfejlesztési alapok",
@@ -316,62 +335,70 @@ JSON
         }
     ]
 }
-Automatikus válasz (ha a kurzus nem található): 404 Not Found
+```
+Automatikus válasz (ha a kurzus nem található): `404 Not Found`
 
-POST /courses/:id/enroll
+**POST** `/courses/:id/enroll`
 A jelenlegi felhasználó beiratkozása egy kurzusra.
-Válasz (sikeres beiratkozás esetén): 200 OK
-JSON
+
+Válasz (sikeres beiratkozás esetén): `200 OK`
+```JSON
 {
   "message": "Successfully enrolled in course"
 }
-Válasz (ha már beiratkozott): 409 Conflict
-JSON
+```
+Válasz (ha már beiratkozott): `409 Conflict`
+```JSON
 {
   "message": "Already enrolled in this course"
 }
-Automatikus válasz (ha a kurzus nem található): 404 Not Found
+```
+Automatikus válasz (ha a kurzus nem található): `404 Not Found`
 
 
-
-PATCH /courses/:id/completed
+**PATCH** `/courses/:id/completed`
 Jelenlegi felhasználó egy kurzusának befejezettként való megjelölése.
-Válasz (sikeres befejezés esetén): 200 OK
-JSON
+
+Válasz (sikeres befejezés esetén): `200 OK`
+```JSON
 {
   "message": "Course completed",
 }
-Válasz (ha nincs beiratkozva): 403 Forbidden
-JSON
+```
+Válasz (ha nincs beiratkozva): `403 Forbidden`
+```JSON
 {
   "message": "Not enrolled in this course"
 }
-Válasz (ha már befejezett): 409 Conflict
-JSON
+```
+Válasz (ha már befejezett): `409 Conflict`
+```JSON
 {
   "message": "Course already completed"
 }
+```
+
+## Összefoglalva
+
+|HTTP metódus|	Útvonal	             |Jogosultság	| Státuszkódok	                                        | Rövid leírás                                 |
+|------------|-----------------------|--------------|-------------------------------------------------------|----------------------------------------------|
+|GET	     | /ping	             | Nyilvános	| 200 OK	                                            | API teszteléshez                             |
+|POST	     | /register	         | Nyilvános	| 201 Created, 400 Bad Request	                        | Új felhasználó regisztrációja                |
+|POST	     | /login	             | Nyilvános	| 200 OK, 401 Unauthorized	                            | Bejelentkezés e-maillel és jelszóval         |
+|POST	     | /logout	             | Hitelesített | 200 OK, 401 Unauthorized	                            | Kijelentkezés                                |
+|GET	     | /users/me	         | Hitelesített | 200 OK, 401 Unauthorized	                            | Saját profil és statisztikák lekérése        |
+|PUT         | /users/me	         | Hitelesített | 200 OK, 422 Unprocessable Entity, 401 Unauthorized    | Saját profil adatainak módosítása            |
+|GET	     | /users  	             | Admin	    | 200 OK, 403 Forbidden                               	| Összes felhasználó profiljának lekérése      |
+|GET	     | /users/:id	         | Admin	    | 200 OK, 403 Forbidden, 404 Not Found, 401 Unauthorized| Bármely felhasználó profiljának lekérése     |
+|DELETE	     | /users/:id	         | Admin	    | 200 OK, 404 Not Found, 401 Unauthorized	            | Felhasználó törlése (Soft Delete)            |
+|GET	     | /courses	             | Hitelesített | 200 OK, 401 Unauthorized	                            | Kurzusok listázása a beiratkozási státusszal | 
+|GET	     | /courses/:id	         | Hitelesített | 200 OK, 404 Not Found, 401 Unauthorized	            | Egy kurzus részletei                         |
+|POST	     | /courses/:id/enroll	 | Hitelesített | 200 OK, 409 Conflict, 404 Not Found, 401 Unauthorized	| Beiratkozás kurzusra                         |
+|PATCH	     | /courses/:id/completed| Hitelesített | 200 OK, 403 Forbidden, 409 Conflict, 401 Unauthorized	| Kurzus befejezettként jelölése               |
 
 
-Összefoglalva:
-
-HTTP metódus	Útvonal	            Jogosultság	 Státuszkódok	                                        Rövid leírás
-GET	        /ping	                Nyilvános	 200 OK	                                                API teszteléshez
-POST	    /register	            Nyilvános	 201 Created, 400 Bad Request	                        Új felhasználó regisztrációja
-POST	    /login	                Nyilvános	 200 OK, 401 Unauthorized	                            Bejelentkezés e-maillel és jelszóval
-POST	    /logout	                Hitelesített 200 OK, 401 Unauthorized	                            Kijelentkezés
-GET	        /users/me	            Hitelesített 200 OK, 401 Unauthorized	                            Saját profil és statisztikák lekérése
-PUT         /users/me	            Hitelesített 200 OK, 422 Unprocessable Entity, 401 Unauthorized     Saját profil adatainak módosítása
-GET	        /users  	            Admin	     200 OK, 403 Forbidden                               	Összes felhasználó profiljának lekérése
-GET	        /users/:id	            Admin	     200 OK, 403 Forbidden, 404 Not Found, 401 Unauthorized	Bármely felhasználó profiljának lekérése
-DELETE	    /users/:id	            Admin	     200 OK, 404 Not Found, 401 Unauthorized	            Felhasználó törlése (Soft Delete)
-GET	        /courses	            Hitelesített 200 OK, 401 Unauthorized	                            Kurzusok listázása a beiratkozási státusszal
-GET	        /courses/:id	        Hitelesített 200 OK, 404 Not Found, 401 Unauthorized	            Egy kurzus részletei
-POST	    /courses/:id/enroll	    Hitelesített 200 OK, 409 Conflict, 404 Not Found, 401 Unauthorized	Beiratkozás kurzusra
-PATCH	    /courses/:id/completed	Hitelesített 200 OK, 403 Forbidden, 409 Conflict, 401 Unauthorized	Kurzus befejezettként jelölése
-
-
-Adatbázis terv:
+##Adatbázis terv:
+```
 +---------------------+     +---------------------+       +-----------------+        +------------+
 |personal_access_tokens|    |        users        |       |   enrollments   |        |  courses   |
 +---------------------+     +---------------------+       +-----------------+        +------------+
@@ -383,7 +410,7 @@ Adatbázis terv:
 | abilities           |     | deleted_at          |       +-----------------+        +------------+
 | last_used_at        |     +---------------------+
 +---------------------+
-
+```
 
 *************************************
 * I. Felvonás struktúra kialakítása *
