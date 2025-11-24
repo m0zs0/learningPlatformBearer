@@ -472,7 +472,17 @@ Route::get('/ping', function () {
 });
 ```
 
+### Teszt
+
+**serve**
+
 `learningPlatformBearer>php artisan serve`
+
+> POSTMAN teszt: GET http://127.0.0.1:8000/api/ping
+
+*VAGY*
+
+**XAMPP**
 
 > POSTMAN teszt: GET http://127.0.0.1/learningPlatform/public/api/ping
 
