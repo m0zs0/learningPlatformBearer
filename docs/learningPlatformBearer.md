@@ -110,10 +110,10 @@ Válasz (sikertelen bejelentkezés esetén): 401 Unauthorized
 }
 ```
 
-+-------------------------------------------------------------------------------------------------+
-| Az innen következő végpontok autentikáltak, tehát a kérés headerjében meg kell adni a tokent is |
-| Authorization: "Bearer 2|7Fbr79b5zn8RxMfOqfdzZ31SnGWvgDidjahbdRfL2a98cfd8"                      |
-+-------------------------------------------------------------------------------------------------+ 
+
+> Az innen következő végpontok autentikáltak, tehát a kérés headerjében meg kell adni a tokent is
+> Authorization: "Bearer 2|7Fbr79b5zn8RxMfOqfdzZ31SnGWvgDidjahbdRfL2a98cfd8"                     
+
 
 POST /logout
 A jelenlegi autentikált felhasználó kijelentkeztetése, a felhasználó tokenjének törlése. Ha a token érvénytelen, a fent meghatározott általános 401 Unauthorized hibát kell visszaadnia.
