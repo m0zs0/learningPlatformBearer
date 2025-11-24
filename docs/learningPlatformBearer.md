@@ -39,8 +39,10 @@ Response: 401 Unauthorized
 - 404 Not Found: A kért erőforrás nem található. Ezt a hibát akkor kell visszaadni, ha a kért kurzus, alkalom vagy foglalás nem található.
 - 503 Service Unavailable: A szolgáltatás nem elérhető. Ezt a hibát akkor kell visszaadni, ha a tanulási szolgáltatás nem elérhető, vagy ha váratlan hibát ad vissza.
 
+---
+
 ## Felhasználókezelés
--------------------
+
 
 **POST** `/register`
 
@@ -79,7 +81,7 @@ Automatikus válasz felüldefiniálása (ha az e-mail cím már foglalt): `422 U
   }
 }
 ```
-
+---
 **POST** `/login`
 
 Bejelentkezés e-mail címmel és jelszóval.
@@ -119,7 +121,7 @@ Válasz (sikertelen bejelentkezés esetén): 401 Unauthorized
 
 > Authorization: "Bearer 2|7Fbr79b5zn8RxMfOqfdzZ31SnGWvgDidjahbdRfL2a98cfd8"                     
 
-
+---
 **POST** `/logout`
 
 A jelenlegi autentikált felhasználó kijelentkeztetése, a felhasználó tokenjének törlése. Ha a token érvénytelen, a fent meghatározott általános `401 Unauthorized` hibát kell visszaadnia.
@@ -130,7 +132,7 @@ Válasz (sikeres kijelentkezés esetén): `200 OK`
   "message": "Logout successful"
 }
 ```
-
+---
 **GET** `/users/me`
 
 Saját felhasználói profil, statisztikák lekérése.
@@ -150,7 +152,7 @@ Válasz: `200 OK`
     }
 }
 ```
-
+---
 **PUT** `/users/me`
 
 Saját felhasználói adatok frissítése. Az aktuális felhasználó módosíthatja a nevét, e-mail címét és/vagy jelszavát.
@@ -181,7 +183,7 @@ Válasz (sikeres frissítés, `200 OK`):
 
 `401 Unauthorized` – ha a token érvénytelen vagy hiányzik
 
-
+---
 **GET** `/users`
 
 A felhasználói profilok, statisztikák lekérése az admin számára.
@@ -237,7 +239,7 @@ Válasz: `403 Forbidden`
   "message": "Admin access required"
 }
 ```
-
+---
 **GET** `/users/:id`
 
 A felhasználói profil, statisztikák lekérése az admin számára.
@@ -273,7 +275,7 @@ Válasz: `404 Not Found`
   "message": "User not found"
 }
 ```
-
+---
 **DELETE** `/users/:id`
 
 Egy felhasználó törlése (Soft Delete) az admin számára.
@@ -298,9 +300,9 @@ Válasz (ha a token érvénytelen vagy hiányzik): `401 Unauthorized`
   "message": "Invalid token"
 }
 ```
-
+---
 ## Kurzuskezelés:
---------------
+
 
 **GET** `/courses`
 
@@ -321,7 +323,7 @@ Válasz: `200 OK`
   ]
 }
 ```
-
+---
 **GET** `/courses/:id`
 
 Információk lekérése egy adott kurzusról.
@@ -349,6 +351,8 @@ Válasz: `200 OK`
 ```
 Automatikus válasz (ha a kurzus nem található): `404 Not Found`
 
+---
+
 **POST** `/courses/:id/enroll`
 
 A jelenlegi felhasználó beiratkozása egy kurzusra.
@@ -367,7 +371,7 @@ Válasz (ha már beiratkozott): `409 Conflict`
 ```
 Automatikus válasz (ha a kurzus nem található): `404 Not Found`
 
-
+---
 **PATCH** `/courses/:id/completed`
 
 Jelenlegi felhasználó egy kurzusának befejezettként való megjelölése.
@@ -390,7 +394,7 @@ Válasz (ha már befejezett): `409 Conflict`
   "message": "Course already completed"
 }
 ```
-
+---
 ## Összefoglalva
 
 |HTTP metódus|	Útvonal	             |Jogosultság	| Státuszkódok	                                        | Rövid leírás                                 |
@@ -410,7 +414,7 @@ Válasz (ha már befejezett): `409 Conflict`
 |PATCH	     | /courses/:id/completed| Hitelesített | 200 OK, 403 Forbidden, 409 Conflict, 401 Unauthorized	| Kurzus befejezettként jelölése               |
 
 
-##Adatbázis terv:
+## Adatbázis terv:
 ```
 +---------------------+     +---------------------+       +-----------------+        +------------+
 |personal_access_tokens|    |        users        |       |   enrollments   |        |  courses   |
