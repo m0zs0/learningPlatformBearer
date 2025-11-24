@@ -116,12 +116,12 @@ Válasz (sikertelen bejelentkezés esetén): 401 Unauthorized
 }
 ```
 
-
+---
 > Az innen következő végpontok autentikáltak, tehát a kérés headerjében meg kell adni a tokent is
 
 > Authorization: "Bearer 2|7Fbr79b5zn8RxMfOqfdzZ31SnGWvgDidjahbdRfL2a98cfd8"                     
 
----
+
 **POST** `/logout`
 
 A jelenlegi autentikált felhasználó kijelentkeztetése, a felhasználó tokenjének törlése. Ha a token érvénytelen, a fent meghatározott általános `401 Unauthorized` hibát kell visszaadnia.
@@ -429,33 +429,36 @@ Válasz (ha már befejezett): `409 Conflict`
 +---------------------+
 ```
 
-*************************************
-* I. Felvonás struktúra kialakítása *
-*************************************
+
+# I. Modul struktúra kialakítása 
 
 
 
-1. Telepítés (projekt létrehozása, .env konfiguráció, sanctum telepítése, tesztútvonal)
----------------------------------------------------------------------------------------
 
-célhely>composer create-project laravel/laravel --prefer-dist learningPlatformBearer
-célhely>cd learningPlatformBearer
-  .env fájl módosítása
+## 1. Telepítés (projekt létrehozása, .env konfiguráció, sanctum telepítése, tesztútvonal)
+
+
+`célhely>composer create-project laravel/laravel --prefer-dist learningPlatformBearer`
+`célhely>cd learningPlatformBearer`
+*.env fájl módosítása*
+```sql
     DB_CONNECTION=mysql
     DB_HOST=127.0.0.1
     DB_PORT=3306
     DB_DATABASE=learning_platform
     DB_USERNAME=root
     DB_PASSWORD=
+```
+*config/app.php módosítása*
+```php
+    'timezone' => 'Europe/Budapest',`
+```
+`learningPlatformBearer>composer require laravel/sanctum`
+`learningPlatformBearer>php artisan vendor:publish --provider="Laravel\Sanctum\SanctumServiceProvider"`
+`learningPlatformBearer>php artisan install:api`
 
-  config/app.php módosítása
-    'timezone' => 'Europe/Budapest',  
-
-learningPlatformBearer>composer require laravel/sanctum
-learningPlatformBearer>php artisan vendor:publish --provider="Laravel\Sanctum\SanctumServiceProvider"
-learningPlatformBearer>php artisan install:api
-
-api.php:
+*api.php:*
+```php
 use Illuminate\Support\Facades\Route;
 
 Route::get('/ping', function () {
@@ -463,14 +466,19 @@ Route::get('/ping', function () {
         'message' => 'API works!'
     ], 200);
 });
+```
 
-learningPlatformBearer>php artisan serve
-POSTMAN teszt: GET http://127.0.0.1/learningPlatform/public/api/ping
+`learningPlatformBearer>php artisan serve`
 
-2. Modellek és migráció (sémák)
---------------------------------
+> POSTMAN teszt: GET http://127.0.0.1/learningPlatform/public/api/ping
 
-Ami már megvan (database/migrations) Ehhez nem is kell nyúlni
+---
+
+## 2. Modellek és migráció (sémák)
+
+
+*Ami már megvan (database/migrations) Ehhez nem is kell nyúlni*
+```php
 Schema::create('personal_access_tokens', function (Blueprint $table) {
     $table->id();
     $table->morphs('tokenable'); // user kapcsolat
@@ -480,9 +488,10 @@ Schema::create('personal_access_tokens', function (Blueprint $table) {
     $table->timestamp('last_used_at')->nullable();
     $table->timestamps();
 });
+```
+*Ezt módosítani kell:*
 
-Ezt módosítani kell:
-
+```php
 Schema::create('users', function (Blueprint $table) {
     $table->id();
     $table->string('name');
@@ -494,9 +503,10 @@ Schema::create('users', function (Blueprint $table) {
     $table->softDeletes(); // ez adja hozzá a deleted_at mezőt
     $table->timestamps();
 });
+```
 
-
-app/Models/User.php (módosítani kell)
+*app/Models/User.php (módosítani kell)*
+```php
 namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -536,21 +546,23 @@ class User extends Authenticatable
         return $this->role === 'admin';
     }
 }
+```
 
 
+`learningPlatformBearer>php artisan make:model Course -m`
 
-learningPlatformBearer>php artisan make:model Course -m
-
-database/migrations/*_create_courses_table.php (módosítani kell) 
-
+*database/migrations/?_create_courses_table.php (módosítani kell)*
+```php
 Schema::create('courses', function (Blueprint $table) {
     $table->id();
     $table->string('title');
     $table->text('description')->nullable();
     $table->timestamps();
 });
+```
 
-app/Models/Course.php (módosítani kell)
+*app/Models/Course.php (módosítani kell)*
+```php
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
@@ -575,11 +587,12 @@ class Course extends Model
         return $this->belongsToMany(User::class, 'enrollments');
     }
 }
+```
 
+`learningPlatformBearer>php artisan make:model Enrollment -m`
 
-learningPlatformBearer>php artisan make:model Enrollment -m
-database/migrations/*_create_enrollments_table.php (módosítani kell) 
-
+*database/migrations/?_create_enrollments_table.php (módosítani kell)*
+```php
 Schema::create('enrollments', function (Blueprint $table) {
     $table->id();
     $table->foreignId('user_id')->constrained()->cascadeOnDelete();
@@ -588,10 +601,11 @@ Schema::create('enrollments', function (Blueprint $table) {
     $table->timestamp('enrolled_at')->useCurrent();
     $table->timestamp('completed_at')->nullable(); // jelzi, hogy a kurzus befejeződött
 });
+```
 
+*app/Models/Enrollment.php (módosítani kell)*
 
-app/Models/Enrollment.php (módosítani kell)
-
+```php
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
@@ -625,14 +639,16 @@ class Enrollment extends Model
         return $this->belongsTo(Course::class);
     }
 }
+```
 
-learningPlatformBearer>php artisan migrate
+`learningPlatformBearer>php artisan migrate`
 
-3. Seeding (Factory és seederek)
---------------------------------
+---
 
-database/factories/UserFactory.php (módosítása)
+## 3. Seeding (Factory és seederek)
 
+*database/factories/UserFactory.php (módosítása)*
+```php
 namespace Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -655,12 +671,12 @@ class UserFactory extends Factory
         ];
     }
 }
+```
 
+`learningPlatformBearer>php artisan make:seeder UserSeeder`
 
-learningPlatformBearer>php artisan make:seeder UserSeeder
-
-database/seeders/UserSeeder.php (módosítása)
-
+*database/seeders/UserSeeder.php (módosítása)*
+```php
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
@@ -683,11 +699,12 @@ class UserSeeder extends Seeder
         User::factory(9)->create();
     }
 }
+```
 
-learningPlatformBearer>php artisan make:seeder CourseSeeder
+`learningPlatformBearer>php artisan make:seeder CourseSeeder`
 
-database/seeders/CourseSeeder.php (módosítása)
-
+*database/seeders/CourseSeeder.php (módosítása)*
+```php
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
@@ -713,11 +730,12 @@ class CourseSeeder extends Seeder
         ]);
     }
 }
+```
 
-learningPlatformBearer>php artisan make:seeder EnrollmentSeeder
+`learningPlatformBearer>php artisan make:seeder EnrollmentSeeder`
 
-database/seeders/EnrollmentSeeder.php (módosítása)
-
+*database/seeders/EnrollmentSeeder.php (módosítása)*
+```php
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
@@ -764,9 +782,10 @@ class EnrollmentSeeder extends Seeder
         ]);
     }
 }
+```
 
-
-DatabaseSeeder.php (módosítása)
+*DatabaseSeeder.php (módosítása)*
+```php
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
@@ -782,18 +801,20 @@ class DatabaseSeeder extends Seeder
         ]);
     }
 }
+```
+
+`learningPlatformBearer>php artisan db:seed`
 
 
-learningPlatformBearer>php artisan db:seed
 
-******************************************
-* II. Felvonás Controller és endpoint-ok *
-******************************************
+# II. Modul Controller és endpoint-ok
 
 
-learningPlatformBearer>php artisan make:controller AuthController
-app\Http\Controllers\AuthController.php szerkesztése
+`learningPlatformBearer>php artisan make:controller AuthController`
 
+*app\Http\Controllers\AuthController.php szerkesztése*
+
+```php
 namespace App\Http\Controllers;
 
 use App\Models\User;
@@ -868,10 +889,11 @@ class AuthController extends Controller
         return response()->json(['message' => 'Logout successful']);
     }
 }
+```
+`learningPlatformBearer>php artisan make:controller UserController`
 
-learningPlatformBearer>php artisan make:controller UserController
-app\Http\Controllers\UserController.php szerkesztése
-
+*app\Http\Controllers\UserController.php szerkesztése*
+```php
 namespace App\Http\Controllers;
 
 use App\Models\User;
@@ -1028,10 +1050,12 @@ class UserController extends Controller
         return response()->json(['message' => 'User deleted successfully']);
     }
 }
+```
 
-learningPlatformBearer>php artisan make:controller CourseController
-app\Http\Controllers\CourseController.php szerkesztése
+`learningPlatformBearer>php artisan make:controller CourseController`
 
+*app\Http\Controllers\CourseController.php szerkesztése*
+```php
 namespace App\Http\Controllers;
 
 use App\Models\Course;
@@ -1104,10 +1128,10 @@ class CourseController extends Controller
         return response()->json(['message' => 'Course completed']);
     }
 }
+```
 
-
-routes\api.php frissítése:
-
+*routes\api.php frissítése:*
+```php
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
@@ -1134,16 +1158,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/courses/{course}/enroll', [CourseController::class, 'enroll']);
     Route::patch('/courses/{course}/completed', [CourseController::class, 'complete']);
 });
+```
 
 
-***************************
-* III. felvonás Tesztelés *
-***************************
+# III. Modul Tesztelés *
 
 Feature teszt ideális az HTTP kérések szimulálására, mert több komponens (Controller, Middleware, Auth) együttműködését vizsgáljuk.
 
-learningPlatformBearer>php artisan make:test AuthTest
+`learningPlatformBearer>php artisan make:test AuthTest`
 
+```php
 namespace Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -1230,10 +1254,10 @@ class AuthTest extends TestCase
     }
 
 }
+```
 
-
-learningPlatformBearer>php artisan make:test UserTest
-
+`learningPlatformBearer>php artisan make:test UserTest`
+```php
 namespace Tests\Feature;
 
 use App\Models\User;
@@ -1435,11 +1459,11 @@ class UserTest extends TestCase
         $this->assertDatabaseHas('users', ['id' => $userToDelete->id]);
     }
 }
+```
 
+`learningPlatformBearer>php artisan make:test CourseTest`
 
-learningPlatformBearer>php artisan make:test CourseTest
-
-
+```php
 namespace Tests\Feature;
 
 use App\Models\Course;
@@ -1625,6 +1649,13 @@ class CourseTest extends TestCase
                  ->assertJson(['message' => 'Course already completed']);
     }
 }
+```
 
+`learningPlatformBearer>php artisan test`
 
-learningPlatformBearer>php artisan test
+## Dokumentálás
+- word: végpontok
+- md: projektleírás/fejlesztői dokumentáció
+-scribe
+-swagger
+-POSTMAN
