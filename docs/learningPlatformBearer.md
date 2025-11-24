@@ -1177,7 +1177,7 @@ Route::middleware('auth:sanctum')->group(function () {
 ```
 
 
-# III. Modul Tesztelés *
+# III. Modul Tesztelés 
 
 Feature teszt ideális az HTTP kérések szimulálására, mert több komponens (Controller, Middleware, Auth) együttműködését vizsgáljuk.
 
