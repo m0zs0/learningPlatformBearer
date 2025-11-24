@@ -43,6 +43,7 @@ Response: 401 Unauthorized
 -------------------
 
 **POST** `/register`
+
 Új felhasználó regisztrálása. Az új felhasználók alapértelmezetten 0 kredittel rendelkeznek. Az e-mail címnek egyedinek kell lennie.
 
 Kérés Törzse:
@@ -80,6 +81,7 @@ Automatikus válasz felüldefiniálása (ha az e-mail cím már foglalt): `422 U
 ```
 
 **POST** `/login`
+
 Bejelentkezés e-mail címmel és jelszóval.
 
 Kérés Törzse:
@@ -119,6 +121,7 @@ Válasz (sikertelen bejelentkezés esetén): 401 Unauthorized
 
 
 **POST** `/logout`
+
 A jelenlegi autentikált felhasználó kijelentkeztetése, a felhasználó tokenjének törlése. Ha a token érvénytelen, a fent meghatározott általános `401 Unauthorized` hibát kell visszaadnia.
 
 Válasz (sikeres kijelentkezés esetén): `200 OK`
@@ -129,6 +132,7 @@ Válasz (sikeres kijelentkezés esetén): `200 OK`
 ```
 
 **GET** `/users/me`
+
 Saját felhasználói profil, statisztikák lekérése.
 
 Válasz: `200 OK`
@@ -148,6 +152,7 @@ Válasz: `200 OK`
 ```
 
 **PUT** `/users/me`
+
 Saját felhasználói adatok frissítése. Az aktuális felhasználó módosíthatja a nevét, e-mail címét és/vagy jelszavát.
 
 Kérés törzse:
@@ -178,6 +183,7 @@ Válasz (sikeres frissítés, `200 OK`):
 
 
 **GET** `/users`
+
 A felhasználói profilok, statisztikák lekérése az admin számára.
 
 Válasz: `200 OK`
@@ -233,6 +239,7 @@ Válasz: `403 Forbidden`
 ```
 
 **GET** `/users/:id`
+
 A felhasználói profil, statisztikák lekérése az admin számára.
 
 Válasz: `200 OK`
@@ -268,6 +275,7 @@ Válasz: `404 Not Found`
 ```
 
 **DELETE** `/users/:id`
+
 Egy felhasználó törlése (Soft Delete) az admin számára.
 
 Ha a felhasználó már törlésre került, vagy nem létezik, a megfelelő hibaüzenetet adja vissza.
@@ -295,6 +303,7 @@ Válasz (ha a token érvénytelen vagy hiányzik): `401 Unauthorized`
 --------------
 
 **GET** `/courses`
+
 Az összes elérhető kurzus listájának lekérése.
 
 Válasz: `200 OK`
@@ -314,6 +323,7 @@ Válasz: `200 OK`
 ```
 
 **GET** `/courses/:id`
+
 Információk lekérése egy adott kurzusról.
 
 Válasz: `200 OK`
@@ -340,6 +350,7 @@ Válasz: `200 OK`
 Automatikus válasz (ha a kurzus nem található): `404 Not Found`
 
 **POST** `/courses/:id/enroll`
+
 A jelenlegi felhasználó beiratkozása egy kurzusra.
 
 Válasz (sikeres beiratkozás esetén): `200 OK`
@@ -358,6 +369,7 @@ Automatikus válasz (ha a kurzus nem található): `404 Not Found`
 
 
 **PATCH** `/courses/:id/completed`
+
 Jelenlegi felhasználó egy kurzusának befejezettként való megjelölése.
 
 Válasz (sikeres befejezés esetén): `200 OK`
