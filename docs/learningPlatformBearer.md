@@ -17,8 +17,9 @@ Az API-t olyan funkciókkal kell ellátni, amelyek lehetővé teszik annak nyilv
 Az adatbázis neve: `learning_platform.`
 
 ## Végpontok:
-A Content-Type és az Accept headerkulcsok mindig application/json formátumúak legyenek.
-Érvénytelen vagy hiányzó token esetén a backendnek 401 Unauthorized választ kell visszaadnia:
+A `Content-Type` és az `Accept` headerkulcsok mindig `application/json` formátumúak legyenek.
+
+Érvénytelen vagy hiányzó token esetén a backendnek `401 Unauthorized` választ kell visszaadnia:
 ```json
 Response: 401 Unauthorized
 {
