@@ -27,9 +27,9 @@ Response: 401 Unauthorized
 ```
 
 ### Nem védett végpontok:
-**GET** `/ping` - teszteléshez
-**POST** `/register` - regisztrációhoz
-**POST** `/login` - belépéshez
+- **GET** `/ping` - teszteléshez
+- **POST** `/register` - regisztrációhoz
+- **POST** `/login` - belépéshez
 
 ### Hibák:
 - 400 Bad Request: A kérés hibás formátumú. Ezt a hibát akkor kell visszaadni, ha a kérés hibásan van formázva, vagy ha hiányoznak a szükséges mezők.
