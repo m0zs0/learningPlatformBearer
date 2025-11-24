@@ -491,7 +491,9 @@ Route::get('/ping', function () {
 ## 2. Modellek és migráció (sémák)
 
 
-*Ami már megvan (database/migrations) Ehhez nem is kell nyúlni*
+Ami már megvan (database/migrations): 
+
+*Ehhez nem is kell nyúlni*
 ```php
 Schema::create('personal_access_tokens', function (Blueprint $table) {
     $table->id();
@@ -821,7 +823,7 @@ class DatabaseSeeder extends Seeder
 
 ---
 
-# II. Modul Controller és endpoint-ok
+# II. Modul Controller-ek és endpoint-ok
 
 
 `learningPlatformBearer>php artisan make:controller AuthController`
